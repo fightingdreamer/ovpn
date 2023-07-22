@@ -13,39 +13,25 @@ def tls_extension(path)
     .first
 end
 
-def r(path)
-  File.read(path)
-end
-
-def w(path, content)
-  parent_path, file_name = File.split path
-  FileUtils.mkdir_p(parent_path)
-  File.write(path, content)
-end
-
-def make(src, dst, path, vars)
-  src_path = "#{src}/#{path}"
+def cpy(src, dst, path, vars = {}, vars_in_src_path = false)
+  if vars_in_src_path
+    src_path = "#{src}/#{path}" % vars
+  else
+    src_path = "#{src}/#{path}"
+  end
   dst_path = "#{dst}/#{path}" % vars
   src_content = File.read(src_path)
   dst_content = src_content % vars
   dir_path = File.split(dst_path).first
   FileUtils.mkdir_p(dir_path)
   File.write(dst_path, dst_content)
+  puts "created #{dst_path}"
   return dst_path
 end
 
-def copy(src, dst)
-  content = r(src)
-  w(dst, content)
-end
-
-def fill(src, dst, vars)
-  content = r(src)
-  w(dst, content % vars)
-end
-
-def chmod(mode, dst)
-  FileUtils.chmod(mode, dst)
+def mod(dst, path, mode, vars = {})
+  dst_path = "#{dst}/#{path}" % vars
+  FileUtils.chmod(mode, dst_path)
 end
 
 def flatten_hash(val, path: "")
@@ -73,169 +59,91 @@ def as_sym(hash)
 end
 
 def generate_server(server, clients)
-  pki = "pki"
-  src = "rb/templates/{server-name}"
-  dst = "out/servers/#{server["name"]}"
+  src = "rb/templates/server"
+  dst = "out/servers/%{server.name}"
+  vpn = "out/servers/%{server.name}/container/root/opt/openvpn"
 
-  unless File.exist?("#{pki}/issued/#{server["name"]}.crt")
+  server_vars = as_sym(flatten(server, path: "server"))
+
+  unless File.exist?("pki/issued/%{server.name}.crt" % server_vars)
     system("ruby", "rb/cert.generate.server.rb", server["name"]) or
       abort("error")
   end
 
-  fill(
-    "#{src}/deploy.sh",
-    "#{dst}/deploy.sh",
-    as_sym(flatten(server, path: "server"))
-  )
-  copy("#{src}/container/Dockerfile", "#{dst}/container/Dockerfile")
-  copy(
-    "#{src}/container/root/opt/entrypoint.sh",
-    "#{dst}/container/root/opt/entrypoint.sh"
-  )
-  fill(
-    "#{src}/container/root/opt/openvpn/openvpn.conf",
-    "#{dst}/container/root/opt/openvpn/openvpn.conf",
-    as_sym(flatten(server, path: "server"))
-  )
+  cpy(src, dst, "deploy.sh", server_vars)
+  cpy(src, dst, "container/Dockerfile", server_vars)
+  cpy(src, dst, "container/root/opt/entrypoint.sh", server_vars)
+  cpy(src, dst, "container/root/opt/openvpn/openvpn.conf", server_vars)
   for client in clients
-    client_name = client["name"]
-    s = as_sym flatten(server, path: "server")
-    c = as_sym flatten(client, path: "client")
-    v = {}.merge(s, c)
-    fill(
-      "#{src}/container/root/opt/openvpn/ccd/{client-name}",
-      "#{dst}/container/root/opt/openvpn/ccd/#{client_name}",
-      v
-    )
+    client_vars = as_sym flatten(client, path: "client")
+    vars = {}.merge(server_vars, client_vars)
+    cpy(src, dst, "container/root/opt/openvpn/ccd/%{client.name}", vars)
   end
-  copy(
-    "#{src}/container/root/opt/openvpn/dhcp/pool.txt",
-    "#{dst}/container/root/opt/openvpn/dhcp/pool.txt"
-  )
-  copy("#{pki}/dh.pem", "#{dst}/container/root/opt/openvpn/pki/dh.pem")
-  copy("#{pki}/ca.crt", "#{dst}/container/root/opt/openvpn/pki/ca.crt")
-  copy("#{pki}/crl.pem", "#{dst}/container/root/opt/openvpn/pki/crl.pem")
-  copy(
-    "#{pki}/issued/#{server["name"]}.crt",
-    "#{dst}/container/root/opt/openvpn/pki/issued/#{server["name"]}.crt"
-  )
-  copy(
-    "#{pki}/private/#{server["name"]}.key",
-    "#{dst}/container/root/opt/openvpn/pki/private/#{server["name"]}.key"
-  )
-  chmod(
-    0400,
-    "#{dst}/container/root/opt/openvpn/pki/private/#{server["name"]}.key"
-  )
-
-  # src #{dst}/deploy.sh
-  # src #{dst}/container/Dockerfile
-  # src #{dst}/container/root/opt/entrypoint.sh
-  # src #{dst}/container/root/opt/openvpn/openvpn.conf
-  # gen #{dst}/container/root/opt/openvpn/ccd/#{client.name}
-  # pki #{dst}/container/root/opt/openvpn/pki/dh.pem
-  # pki #{dst}/container/root/opt/openvpn/pki/ca.crt
-  # pki #{dst}/container/root/opt/openvpn/pki/clr.pem
-  # pki #{dst}/container/root/opt/openvpn/pki/issued/{server.name}.crt
-  # pki #{dst}/container/root/opt/openvpn/pki/private/{server.name}.key
+  cpy(src, vpn, "container/root/opt/openvpn/dhcp/pool.txt", server_vars)
+  cpy(".", vpn, "pki/dh.pem", server_vars)
+  cpy(".", vpn, "pki/ca.crt", server_vars)
+  cpy(".", vpn, "pki/crl.pem", server_vars)
+  cpy(".", vpn, "pki/issued/%{server.name}.crt", server_vars, true)
+  cpy(".", vpn, "pki/private/%{server.name}.key", server_vars, true)
+  mod(vpn, "pki/private/%{server.name}.key", 0400, server_vars)
 end
 
 def generate_client(server, client)
-  pki = "pki"
-  src = "rb/templates/{client-name}"
-  dst = "out/clients/#{client["name"]}"
+  src = "rb/templates/client"
+  dst = "out/clients/%{client.name}"
+  cnf = "out/servers/%{client.name}/config/conf"
+  opn = "out/servers/%{client.name}/config/ovpn"
+  vpn = "out/servers/%{client.name}/container/root/opt/openvpn"
 
-  unless File.exist?("#{pki}/issued/#{client["name"]}.crt")
+  server_vars = as_sym(flatten(server, path: "server"))
+  client_vars = as_sym(flatten(client, path: "client"))
+
+  unless File.exist?("pki/issued/%{client.name}.crt" % client_vars)
     system("ruby", "rb/cert.generate.client.rb", client["name"]) or
       abort("error")
   end
 
-  fill(
-    "#{src}/deploy.sh",
-    "#{dst}/deploy.sh",
-    as_sym(flatten(client, path: "client"))
-  )
-  copy("#{src}/container/Dockerfile", "#{dst}/container/Dockerfile")
-  copy(
-    "#{src}/container/root/opt/entrypoint.sh",
-    "#{dst}/container/root/opt/entrypoint.sh"
-  )
-  fill(
-    "#{src}/container/root/opt/openvpn/openvpn.conf",
-    "#{dst}/container/root/opt/openvpn/openvpn.conf",
-    {}.merge(
-      as_sym(flatten(client, path: "client")),
-      as_sym(flatten(server, path: "server"))
-    )
-  )
-  copy("#{pki}/dh.pem", "#{dst}/container/root/opt/openvpn/pki/dh.pem")
-  copy("#{pki}/ca.crt", "#{dst}/container/root/opt/openvpn/pki/ca.crt")
-  copy(
-    "#{pki}/issued/#{client["name"]}.crt",
-    "#{dst}/container/root/opt/openvpn/pki/issued/#{client["name"]}.crt"
-  )
-  copy(
-    "#{pki}/private/#{client["name"]}.key",
-    "#{dst}/container/root/opt/openvpn/pki/private/#{client["name"]}.key"
-  )
+  credentials = {
+    "ca.crt.content": File.read("pki/ca.crt").strip,
+    "client.issued.crt.content":
+      File.read("pki/issued/%{client.name}.crt" % client_vars).strip,
+    "client.private.key.content":
+      File.read("pki/private/%{client.name}.key" % client_vars).strip
+  }
 
-  # src {dst}/deploy.sh
-  # src {dst}/container/Dockerfile
-  # src {dst}/container/root/opt/entrypoint.sh
-  # src {dst}/container/root/opt/openvpn/openvpn.conf
-  # pki {dst}/container/root/opt/openvpn/pki/ca.crt
-  # pki {dst}/container/root/opt/openvpn/pki/issued/{client-name}.crt
-  # pki {dst}/container/root/opt/openvpn/pki/private/{client-name}.key
+  cpy(src, dst, "deploy.sh", client_vars)
+  cpy(src, dst, "container/Dockerfile", client_vars)
+  cpy(src, dst, "container/root/opt/entrypoint.sh", client_vars)
+  cpy(
+    src,
+    dst,
+    "container/root/opt/openvpn/openvpn.conf",
+    {}.merge(server_vars, client_vars)
+  )
+  cpy(".", vpn, "pki/ca.crt", client_vars)
+  cpy(".", vpn, "pki/issued/%{client.name}.crt", client_vars, true)
+  cpy(".", vpn, "pki/private/%{client.name}.key", client_vars, true)
+  mod(vpn, "pki/private/%{client.name}.key", 0400, client_vars)
 
-  fill(
-    "#{src}/run.conf.sh",
-    "#{dst}/run.conf.sh",
-    as_sym(flatten(client, path: "client"))
+  cpy(src, dst, "run.conf.sh", client_vars)
+  cpy(src, dst, "run.ovpn.sh", client_vars)
+  cpy(
+    src,
+    dst,
+    "config/conf/%{client.name}.conf",
+    {}.merge(server_vars, client_vars)
   )
-  fill(
-    "#{src}/run.ovpn.sh",
-    "#{dst}/run.ovpn.sh",
-    as_sym(flatten(client, path: "client"))
+  cpy(".", cnf, "pki/ca.crt", client_vars)
+  cpy(".", cnf, "pki/issued/%{client.name}.crt", client_vars, true)
+  cpy(".", cnf, "pki/private/%{client.name}.key", client_vars, true)
+  mod(cnf, "pki/private/%{client.name}.key", 0400, client_vars)
+  cpy(
+    src,
+    dst,
+    "/config/ovpn/%{client.name}.ovpn",
+    {}.merge(server_vars, client_vars, credentials)
   )
-  fill(
-    "#{src}/config/conf/{client-name}.conf",
-    "#{dst}/config/conf/#{client["name"]}.conf",
-    {}.merge(
-      as_sym(flatten(client, path: "client")),
-      as_sym(flatten(server, path: "server"))
-    )
-  )
-  copy("#{pki}/ca.crt", "#{dst}/config/conf/pki/ca.crt")
-  copy(
-    "#{pki}/issued/#{client["name"]}.crt",
-    "#{dst}/config/conf/pki/issued/#{client["name"]}.crt"
-  )
-  copy(
-    "#{pki}/private/#{client["name"]}.key",
-    "#{dst}/config/conf/pki/private/#{client["name"]}.key"
-  )
-  chmod(0400, "#{dst}/config/conf/pki/private/#{client["name"]}.key")
-  fill(
-    "#{src}/config/ovpn/{client-name}.ovpn",
-    "#{dst}/config/ovpn/#{client["name"]}.ovpn",
-    {}.merge(
-      as_sym(flatten(client, path: "client")),
-      as_sym(flatten(server, path: "server")),
-      {
-        "ca.crt.content": r("#{pki}/ca.crt").strip,
-        "client.issued.crt.content":
-          r("#{pki}/issued/#{client["name"]}.crt").strip,
-        "client.private.key.content":
-          r("#{pki}/private/#{client["name"]}.key").strip
-      }
-    )
-  )
-  chmod(0400, "#{dst}/config/ovpn/#{client["name"]}.ovpn")
-
-  # src {dst}/config/openvpn.conf
-  # pki {dst}/config/keys/ca.crt
-  # pki {dst}/config/keys/issued/{client-name}.crt
-  # pki {dst}/config/keys/private/{client-name}.key
+  mod(dst, "config/ovpn/%{client.name}.ovpn", 0400, client_vars)
 end
 
 system("rm", "-rfv", "out") or abort("error")
