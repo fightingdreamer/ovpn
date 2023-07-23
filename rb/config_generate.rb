@@ -260,12 +260,12 @@ def config_generate(
       .map { |path| File.basename(path, File.extname(path)) }
       .to_set
 
-  for name in cert_names - (server_names + client_names)
-    system("ruby", "rb/cert_revoke.rb", name)
+  for cert_name in cert_names - (server_names + client_names)
+    system("ruby", "rb/cert_revoke.rb", cert_name)
   end
 
   for server_name in server_names - cert_names
-    system("ruby", "rb/cert_generate_server.rb", name)
+    system("ruby", "rb/cert_generate_server.rb", server_name)
   end
 
   for client_name in client_names - cert_names
