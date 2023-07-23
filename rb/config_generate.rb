@@ -11,6 +11,36 @@ def server_files(cfg_server, cfg_clients)
   out = "out/servers/#{server_name}"
 
   return [
+    # ./conf
+    { src: "#{tem}/run.conf.sh", dst: "#{out}/run.conf.sh", cfg: cfg_server },
+    {
+      src: "#{tem}/conf/%{server_name}.conf",
+      dst: "#{out}/conf/#{server_name}.conf",
+      cfg: cfg_server
+    },
+    { src: "#{tem}/conf/dhcp/pool.txt", dst: "#{out}/conf/dhcp/pool.txt" },
+    *cfg_clients.map do |cfg_client|
+      client_name = cfg_client[:client_name]
+      (
+        {
+          src: "#{tem}/conf/ccd/%{client_name}",
+          dst: "#{out}/conf/ccd/#{client_name}",
+          cfg: {}.merge(cfg_server, cfg_client)
+        }
+      )
+    end,
+    { src: "pki/dh.pem", dst: "#{out}/conf/pki/dh.pem" },
+    { src: "pki/ca.crt", dst: "#{out}/conf/pki/ca.crt" },
+    { src: "pki/crl.pem", dst: "#{out}/conf/pki/crl.pem" },
+    {
+      src: "pki/issued/#{server_name}.crt",
+      dst: "#{out}/conf/pki/issued/#{server_name}.crt"
+    },
+    {
+      src: "pki/private/#{server_name}.key",
+      dst: "#{out}/conf/pki/private/#{server_name}.key",
+      mod: 0400
+    },
     # container
     {
       src: "#{tem}/run.container.sh",
@@ -223,22 +253,17 @@ def config_generate
       dir = File.dirname(dst)
       FileUtils.mkdir_p(dir)
       File.write(dst, dst_content)
-      FileUtils.chmod(mod, dst)
       p "created #{dst}"
-      next
     end
     unless File.read(dst) == dst_content
       File.write(dst, dst_content)
-      FileUtils.chmod(mod, dst)
       p "updated #{dst}"
-      next
     end
     unless mod.nil? or File.stat(dst).mode & 0777 == mod
       FileUtils.chmod(mod, dst)
       p "updated #{dst}"
       next
     end
-    p "ignored #{dst}"
   end
 
   # todo: revoke dropped certs
