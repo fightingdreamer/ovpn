@@ -1,0 +1,8 @@
+* Merge to single file
+
+* Allow changing `template` location
+
+* Allow changing `pki` and `out` location
+  - default to config dir or current dir
+
+* Check cert types using OpenSSL::X509::Certificate
