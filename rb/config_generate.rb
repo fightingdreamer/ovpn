@@ -39,7 +39,7 @@ def server_files(cfg_server, cfg_clients)
     {
       src: "pki/private/#{server_name}.key",
       dst: "#{out}/conf/pki/private/#{server_name}.key",
-      mod: 0400
+      mod: 0600
     },
     # container
     {
@@ -84,7 +84,7 @@ def server_files(cfg_server, cfg_clients)
     {
       src: "pki/private/#{server_name}.key",
       dst: "#{out}/container/root/opt/openvpn/pki/private/#{server_name}.key",
-      mod: 0400
+      mod: 0600
     }
   ]
 end
@@ -111,7 +111,7 @@ def client_files(cfg_server, cfg_client, cfg_client_pki)
     {
       src: "pki/private/#{client_name}.key",
       dst: "#{out}/conf/pki/private/#{client_name}.key",
-      mod: 0400
+      mod: 0600
     },
     # ./ovpn
     { src: "#{tem}/run.ovpn.sh", dst: "#{out}/run.ovpn.sh", cfg: cfg_client },
@@ -119,7 +119,7 @@ def client_files(cfg_server, cfg_client, cfg_client_pki)
       src: "#{tem}/ovpn/%{client_name}.ovpn",
       dst: "#{out}/ovpn/#{client_name}.ovpn",
       cfg: {}.merge(cfg_server, cfg_client, cfg_client_pki),
-      mod: 0400
+      mod: 0600
     },
     # ./container
     {
@@ -145,7 +145,7 @@ def client_files(cfg_server, cfg_client, cfg_client_pki)
     {
       src: "pki/private/#{client_name}.key",
       dst: "#{out}/container/root/opt/openvpn/pki/private/#{client_name}.key",
-      mod: 0400
+      mod: 0600
     }
   ]
 end
@@ -226,8 +226,6 @@ def config_generate
       .glob("pki/issued/*crt")
       .map { |path| File.basename(path, File.extname(path)) }
       .to_set
-
-  # todo: check cert types using OpenSSL::X509::Certificate
 
   for name in cert_names - (server_names + client_names)
     system("ruby", "rb/cert_revoke.rb", name)
