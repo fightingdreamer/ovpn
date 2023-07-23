@@ -6,7 +6,7 @@ def cert_revoke()
   abort("name required") if not name or not name.length
 
   # remove certificate
-  system("easyrsa", "revoke", name) or abort("error")
+  system("easyrsa", "--batch", "revoke", name) or abort("error")
 
   # update revoke list
   system("easyrsa", "gen-crl") or abort("error")

@@ -168,17 +168,6 @@ end
 #     generate_client(name, $config) if ext.include?("Client")
 #   end
 
-# unless File.exist?("pki/issued/#{server["name"]}.crt")
-#   system("ruby", "rb/cert.generate.server.rb", server["name"]) or abort("error")
-# end
-
-# for client in clients
-#   unless File.exist?("pki/issued/#{client["name"]}.crt")
-#     system("ruby", "rb/cert.generate.client.rb", client["name"]) or
-#       abort("error")
-#   end
-# end
-
 def flatten_hash(value, path = nil)
   {}.merge *value.map { |k, v| flatten(v, [path, k].compact.join("_").to_sym) }
 end
@@ -229,6 +218,29 @@ end
 def config_generate
   raw = JSON.load_file("config.json")
 
+  server_names = [raw["server"]["name"]].to_set
+  client_names = raw["clients"].map { |client| client["name"] }.to_set
+
+  cert_names =
+    Dir
+      .glob("pki/issued/*crt")
+      .map { |path| File.basename(path, File.extname(path)) }
+      .to_set
+
+  # todo: check cert types using OpenSSL::X509::Certificate
+
+  for name in cert_names - (server_names + client_names)
+    system("ruby", "rb/cert_revoke.rb", name)
+  end
+
+  for server_name in server_names - cert_names
+    system("ruby", "rb/cert_generate_server.rb", name)
+  end
+
+  for client_name in client_names - cert_names
+    system("ruby", "rb/cert_generate_client.rb", client_name)
+  end
+
   cfg_server = flatten_hash(raw["server"], :server)
   cfg_clients = raw["clients"].map { |client| flatten_hash(client, :client) }
 
@@ -265,9 +277,6 @@ def config_generate
       next
     end
   end
-
-  # todo: revoke dropped certs
-  # todo: create missing certs
 
   drop_unused_files(old - new)
   drop_unused_dirs(old)
