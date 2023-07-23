@@ -1,1 +1,0 @@
-ifconfig-push %{client.vpn.ip} %{server.vpn.netmask}

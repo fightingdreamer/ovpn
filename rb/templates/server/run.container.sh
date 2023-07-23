@@ -1,10 +1,9 @@
 #!/bin/sh
 
 set -e
-name="openvpn-server-%{server.name}"
 
 podman build \
- --tag "$name" \
+ --tag "openvpn-server-%{server_name}" \
  container
 
 podman run \
@@ -15,6 +14,6 @@ podman run \
   --sysctl="net.ipv4.conf.all.src_valid_mark=1" \
   --sysctl="net.ipv4.conf.all.forwarding=1" \
   --device /dev/net/tun \
-  --publish "%{server.local.ip}:%{server.local.port}:%{server.local.port}/udp" \
-  --name "$name" \
-  "$name"
+  --publish "%{server_local_ip}:%{server_local_port}:%{server_local_port}/udp" \
+  --name "openvpn-server-%{server_name}" \
+  "openvpn-server-%{server_name}"

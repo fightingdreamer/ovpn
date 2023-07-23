@@ -3,4 +3,4 @@
 set -e
 
 cd ./config/ovpn
-exec openvpn --config ./%{client.name}.ovpn
+exec openvpn --config ./%{client_name}.ovpn

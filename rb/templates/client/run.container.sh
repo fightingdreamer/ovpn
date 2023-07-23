@@ -1,10 +1,9 @@
 #!/bin/sh
 
 set -e
-name="openvpn-client-%{client.name}"
 
 podman build \
- --tag "$name" \
+ --tag "openvpn-client-%{client_name}" \
  container
 
 podman run \
@@ -12,5 +11,5 @@ podman run \
   --rm \
   --cap-add=NET_ADMIN \
   --device /dev/net/tun \
-  --name "$name" \
-  "$name"
+  --name "openvpn-client-%{client_name}" \
+  "openvpn-client-%{client_name}"
