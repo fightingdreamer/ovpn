@@ -5,10 +5,18 @@ require "JSON"
 require "OpenSSL"
 require "FileUtils"
 
-def server_files(cfg_server, cfg_clients)
+def server_files(
+  cfg_server,
+  cfg_clients,
+  pki_path: "pki",
+  tem_path: "rb/templates",
+  out_path: "out"
+)
   server_name = cfg_server[:server_name]
-  tem = "rb/templates/server"
-  out = "out/servers/#{server_name}"
+
+  pki = "#{pki_path}"
+  tem = "#{tem_path}/server"
+  out = "#{out_path}/servers/#{server_name}"
 
   return [
     # ./conf
@@ -29,15 +37,15 @@ def server_files(cfg_server, cfg_clients)
         }
       )
     end,
-    { src: "pki/dh.pem", dst: "#{out}/conf/pki/dh.pem" },
-    { src: "pki/ca.crt", dst: "#{out}/conf/pki/ca.crt" },
-    { src: "pki/crl.pem", dst: "#{out}/conf/pki/crl.pem" },
+    { src: "#{pki}/dh.pem", dst: "#{out}/conf/pki/dh.pem" },
+    { src: "#{pki}/ca.crt", dst: "#{out}/conf/pki/ca.crt" },
+    { src: "#{pki}/crl.pem", dst: "#{out}/conf/pki/crl.pem" },
     {
-      src: "pki/issued/#{server_name}.crt",
+      src: "#{pki}/issued/#{server_name}.crt",
       dst: "#{out}/conf/pki/issued/#{server_name}.crt"
     },
     {
-      src: "pki/private/#{server_name}.key",
+      src: "#{pki}/private/#{server_name}.key",
       dst: "#{out}/conf/pki/private/#{server_name}.key",
       mod: 0600
     },
@@ -71,29 +79,43 @@ def server_files(cfg_server, cfg_clients)
         }
       )
     end,
-    { src: "pki/dh.pem", dst: "#{out}/container/root/opt/openvpn/pki/dh.pem" },
-    { src: "pki/ca.crt", dst: "#{out}/container/root/opt/openvpn/pki/ca.crt" },
     {
-      src: "pki/crl.pem",
+      src: "#{pki}/dh.pem",
+      dst: "#{out}/container/root/opt/openvpn/pki/dh.pem"
+    },
+    {
+      src: "#{pki}/ca.crt",
+      dst: "#{out}/container/root/opt/openvpn/pki/ca.crt"
+    },
+    {
+      src: "#{pki}/crl.pem",
       dst: "#{out}/container/root/opt/openvpn/pki/crl.pem"
     },
     {
-      src: "pki/issued/#{server_name}.crt",
+      src: "#{pki}/issued/#{server_name}.crt",
       dst: "#{out}/container/root/opt/openvpn/pki/issued/#{server_name}.crt"
     },
     {
-      src: "pki/private/#{server_name}.key",
+      src: "#{pki}/private/#{server_name}.key",
       dst: "#{out}/container/root/opt/openvpn/pki/private/#{server_name}.key",
       mod: 0600
     }
   ]
 end
 
-def client_files(cfg_server, cfg_client, cfg_client_pki)
+def client_files(
+  cfg_server,
+  cfg_client,
+  cfg_client_pki,
+  pki_path: "pki",
+  tem_path: "rb/templates",
+  out_path: "out"
+)
   client_name = cfg_client[:client_name]
 
-  tem = "rb/templates/client"
-  out = "out/clients/#{client_name}"
+  pki = "#{pki_path}"
+  tem = "#{tem_path}/client"
+  out = "#{out_path}/clients/#{client_name}"
 
   return [
     # ./conf
@@ -103,13 +125,13 @@ def client_files(cfg_server, cfg_client, cfg_client_pki)
       dst: "#{out}/conf/#{client_name}.conf",
       cfg: {}.merge(cfg_server, cfg_client)
     },
-    { src: "pki/ca.crt", dst: "#{out}/conf/pki/ca.crt" },
+    { src: "#{pki}/ca.crt", dst: "#{out}/conf/pki/ca.crt" },
     {
-      src: "pki/issued/#{client_name}.crt",
+      src: "#{pki}/issued/#{client_name}.crt",
       dst: "#{out}/conf/pki/issued/#{client_name}.crt"
     },
     {
-      src: "pki/private/#{client_name}.key",
+      src: "#{pki}/private/#{client_name}.key",
       dst: "#{out}/conf/pki/private/#{client_name}.key",
       mod: 0600
     },
@@ -137,13 +159,16 @@ def client_files(cfg_server, cfg_client, cfg_client_pki)
       dst: "#{out}/container/root/opt/openvpn/openvpn.conf",
       cfg: {}.merge(cfg_server, cfg_client)
     },
-    { src: "pki/ca.crt", dst: "#{out}/container/root/opt/openvpn/pki/ca.crt" },
     {
-      src: "pki/issued/#{client_name}.crt",
+      src: "#{pki}/ca.crt",
+      dst: "#{out}/container/root/opt/openvpn/pki/ca.crt"
+    },
+    {
+      src: "#{pki}/issued/#{client_name}.crt",
       dst: "#{out}/container/root/opt/openvpn/pki/issued/#{client_name}.crt"
     },
     {
-      src: "pki/private/#{client_name}.key",
+      src: "#{pki}/private/#{client_name}.key",
       dst: "#{out}/container/root/opt/openvpn/pki/private/#{client_name}.key",
       mod: 0600
     }
@@ -186,12 +211,13 @@ def flatten(value, path = nil)
   flatten_other(value, path)
 end
 
-def get_client_pki_as_cfg(cfg_client)
+def get_client_pki_as_cfg(cfg_client, pki_path: "pki")
+  pki = "#{pki_path}"
   client_name = cfg_client[:client_name]
   {
-    "ca.crt": File.read("pki/ca.crt").strip,
-    "client_issued.crt": File.read("pki/issued/#{client_name}.crt").strip,
-    "client_private.key": File.read("pki/private/#{client_name}.key").strip
+    "ca.crt": File.read("#{pki}/ca.crt").strip,
+    "client_issued.crt": File.read("#{pki}/issued/#{client_name}.crt").strip,
+    "client_private.key": File.read("#{pki}/private/#{client_name}.key").strip
   }
 end
 
@@ -215,15 +241,22 @@ def drop_unused_dirs(paths)
     end
 end
 
-def config_generate
-  raw = JSON.load_file("config.json")
+def config_generate(
+  cfg_path: "config.json",
+  pki_path: "pki",
+  tem_path: "rb/templates",
+  out_path: "out"
+)
+  pki = "#{pki_path}"
+  out = "#{out_path}"
+  raw = JSON.load_file(cfg_path)
 
   server_names = [raw["server"]["name"]].to_set
   client_names = raw["clients"].map { |client| client["name"] }.to_set
 
   cert_names =
     Dir
-      .glob("pki/issued/*crt")
+      .glob("#{pki}/issued/*crt")
       .map { |path| File.basename(path, File.extname(path)) }
       .to_set
 
@@ -242,15 +275,29 @@ def config_generate
   cfg_server = flatten_hash(raw["server"], :server)
   cfg_clients = raw["clients"].map { |client| flatten_hash(client, :client) }
 
-  server_ops = server_files(cfg_server, cfg_clients)
+  server_ops =
+    server_files(
+      cfg_server,
+      cfg_clients,
+      pki_path: pki_path,
+      tem_path: tem_path,
+      out_path: out_path
+    )
   client_ops =
     cfg_clients.map do |cfg_client|
-      client_files(cfg_server, cfg_client, get_client_pki_as_cfg(cfg_client))
+      client_files(
+        cfg_server,
+        cfg_client,
+        get_client_pki_as_cfg(cfg_client),
+        pki_path: pki_path,
+        tem_path: tem_path,
+        out_path: out_path
+      )
     end
 
   ops = [*server_ops, *client_ops.flatten]
   new = ops.map { |op| op[:dst] }.to_set
-  old = Dir.glob("out/**/*").to_set
+  old = Dir.glob("#{out}/**/*").to_set
 
   for op in ops
     src = op[:src]
@@ -280,4 +327,4 @@ def config_generate
   drop_unused_dirs(old)
 end
 
-config_generate
+config_generate()
