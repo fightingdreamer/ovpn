@@ -1,0 +1,14 @@
+* cipher
+  https://community.openvpn.net/openvpn/wiki/CipherNegotiation
+
+* easyrsa
+  https://easy-rsa.readthedocs.io/en/latest/
+
+* openvpn.config matches command line
+  https://linux.die.net/man/8/openvpn
+
+* main config options
+  https://github.com/OpenVPN/openvpn/blob/master/doc/man-sections/
+
+* embed certs in openvpn.conf
+  https://github.com/OpenVPN/openvpn/blob/master/doc/man-sections/inline-files.rst
