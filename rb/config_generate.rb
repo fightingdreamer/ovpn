@@ -9,29 +9,29 @@ def server_files(
   cfg_server,
   cfg_clients,
   pki_path: "pki",
-  tem_path: "rb/templates",
+  tpl_path: "tpl",
   out_path: "out"
 )
   server_name = cfg_server[:server_name]
 
   pki = "#{pki_path}"
-  tem = "#{tem_path}/server"
+  tpl = "#{tpl_path}/server"
   out = "#{out_path}/servers/#{server_name}"
 
   return [
     # ./conf
-    { src: "#{tem}/run_conf.sh", dst: "#{out}/run_conf.sh", cfg: cfg_server },
+    { src: "#{tpl}/run_conf.sh", dst: "#{out}/run_conf.sh", cfg: cfg_server },
     {
-      src: "#{tem}/conf/%{server_name}.conf",
+      src: "#{tpl}/conf/%{server_name}.conf",
       dst: "#{out}/conf/#{server_name}.conf",
       cfg: cfg_server
     },
-    { src: "#{tem}/conf/dhcp/pool.txt", dst: "#{out}/conf/dhcp/pool.txt" },
+    { src: "#{tpl}/conf/dhcp/pool.txt", dst: "#{out}/conf/dhcp/pool.txt" },
     *cfg_clients.map do |cfg_client|
       client_name = cfg_client[:client_name]
       (
         {
-          src: "#{tem}/conf/ccd/%{client_name}",
+          src: "#{tpl}/conf/ccd/%{client_name}",
           dst: "#{out}/conf/ccd/#{client_name}",
           cfg: {}.merge(cfg_server, cfg_client)
         }
@@ -51,29 +51,29 @@ def server_files(
     },
     # container
     {
-      src: "#{tem}/run_container.sh",
+      src: "#{tpl}/run_container.sh",
       dst: "#{out}/run_container.sh",
       cfg: cfg_server
     },
-    { src: "#{tem}/container/Dockerfile", dst: "#{out}/container/Dockerfile" },
+    { src: "#{tpl}/container/Dockerfile", dst: "#{out}/container/Dockerfile" },
     {
-      src: "#{tem}/container/root/opt/entrypoint.sh",
+      src: "#{tpl}/container/root/opt/entrypoint.sh",
       dst: "#{out}/container/root/opt/entrypoint.sh"
     },
     {
-      src: "#{tem}/container/root/opt/openvpn/openvpn.conf",
+      src: "#{tpl}/container/root/opt/openvpn/openvpn.conf",
       dst: "#{out}/container/root/opt/openvpn/openvpn.conf",
       cfg: cfg_server
     },
     {
-      src: "#{tem}/container/root/opt/openvpn/dhcp/pool.txt",
+      src: "#{tpl}/container/root/opt/openvpn/dhcp/pool.txt",
       dst: "#{out}/container/root/opt/openvpn/dhcp/pool.txt"
     },
     *cfg_clients.map do |cfg_client|
       client_name = cfg_client[:client_name]
       (
         {
-          src: "#{tem}/container/root/opt/openvpn/ccd/%{client_name}",
+          src: "#{tpl}/container/root/opt/openvpn/ccd/%{client_name}",
           dst: "#{out}/container/root/opt/openvpn/ccd/#{client_name}",
           cfg: {}.merge(cfg_server, cfg_client)
         }
@@ -108,20 +108,20 @@ def client_files(
   cfg_client,
   cfg_client_pki,
   pki_path: "pki",
-  tem_path: "rb/templates",
+  tpl_path: "tpl",
   out_path: "out"
 )
   client_name = cfg_client[:client_name]
 
   pki = "#{pki_path}"
-  tem = "#{tem_path}/client"
+  tpl = "#{tpl_path}/client"
   out = "#{out_path}/clients/#{client_name}"
 
   return [
     # ./conf
-    { src: "#{tem}/run_conf.sh", dst: "#{out}/run_conf.sh", cfg: cfg_client },
+    { src: "#{tpl}/run_conf.sh", dst: "#{out}/run_conf.sh", cfg: cfg_client },
     {
-      src: "#{tem}/conf/%{client_name}.conf",
+      src: "#{tpl}/conf/%{client_name}.conf",
       dst: "#{out}/conf/#{client_name}.conf",
       cfg: {}.merge(cfg_server, cfg_client)
     },
@@ -136,26 +136,26 @@ def client_files(
       mod: 0600
     },
     # ./ovpn
-    { src: "#{tem}/run_ovpn.sh", dst: "#{out}/run_ovpn.sh", cfg: cfg_client },
+    { src: "#{tpl}/run_ovpn.sh", dst: "#{out}/run_ovpn.sh", cfg: cfg_client },
     {
-      src: "#{tem}/ovpn/%{client_name}.ovpn",
+      src: "#{tpl}/ovpn/%{client_name}.ovpn",
       dst: "#{out}/ovpn/#{client_name}.ovpn",
       cfg: {}.merge(cfg_server, cfg_client, cfg_client_pki),
       mod: 0600
     },
     # ./container
     {
-      src: "#{tem}/run_container.sh",
+      src: "#{tpl}/run_container.sh",
       dst: "#{out}/run_container.sh",
       cfg: cfg_client
     },
-    { src: "#{tem}/container/Dockerfile", dst: "#{out}/container/Dockerfile" },
+    { src: "#{tpl}/container/Dockerfile", dst: "#{out}/container/Dockerfile" },
     {
-      src: "#{tem}/container/root/opt/entrypoint.sh",
+      src: "#{tpl}/container/root/opt/entrypoint.sh",
       dst: "#{out}/container/root/opt/entrypoint.sh"
     },
     {
-      src: "#{tem}/container/root/opt/openvpn/openvpn.conf",
+      src: "#{tpl}/container/root/opt/openvpn/openvpn.conf",
       dst: "#{out}/container/root/opt/openvpn/openvpn.conf",
       cfg: {}.merge(cfg_server, cfg_client)
     },
@@ -226,7 +226,7 @@ end
 def config_generate(
   cfg_path: "config.json",
   pki_path: "pki",
-  tem_path: "rb/templates",
+  tpl_path: "tpl",
   out_path: "out"
 )
   pki = "#{pki_path}"
@@ -262,7 +262,7 @@ def config_generate(
       cfg_server,
       cfg_clients,
       pki_path: pki_path,
-      tem_path: tem_path,
+      tpl_path: tpl_path,
       out_path: out_path
     )
   client_ops =
@@ -272,7 +272,7 @@ def config_generate(
         cfg_client,
         get_client_pki_as_cfg(cfg_client),
         pki_path: pki_path,
-        tem_path: tem_path,
+        tpl_path: tpl_path,
         out_path: out_path
       )
     end
