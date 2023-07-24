@@ -1,3 +1,5 @@
 * Merge to single file
 
+* Replace ./rb to ./src
+
 * Check cert types using OpenSSL::X509::Certificate
