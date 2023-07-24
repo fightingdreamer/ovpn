@@ -2,6 +2,7 @@
   https://community.openvpn.net/openvpn/wiki/CipherNegotiation
 
 * easyrsa
+  https://github.com/OpenVPN/easy-rsa/blob/master/README.quickstart.md
   https://easy-rsa.readthedocs.io/en/latest/
 
 * openvpn.config matches command line
@@ -12,3 +13,9 @@
 
 * embed certs in openvpn.conf
   https://github.com/OpenVPN/openvpn/blob/master/doc/man-sections/inline-files.rst
+
+* alpine guide to easyrsa
+  https://wiki.alpinelinux.org/wiki/Setting_up_a_OpenVPN_server
+
+* nixos integration
+  https://nixos.wiki/wiki/OpenVPN
