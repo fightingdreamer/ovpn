@@ -20,7 +20,7 @@ def server_files(
 
   return [
     # ./conf
-    { src: "#{tem}/run.conf.sh", dst: "#{out}/run.conf.sh", cfg: cfg_server },
+    { src: "#{tem}/run_conf.sh", dst: "#{out}/run_conf.sh", cfg: cfg_server },
     {
       src: "#{tem}/conf/%{server_name}.conf",
       dst: "#{out}/conf/#{server_name}.conf",
@@ -51,8 +51,8 @@ def server_files(
     },
     # container
     {
-      src: "#{tem}/run.container.sh",
-      dst: "#{out}/run.container.sh",
+      src: "#{tem}/run_container.sh",
+      dst: "#{out}/run_container.sh",
       cfg: cfg_server
     },
     { src: "#{tem}/container/Dockerfile", dst: "#{out}/container/Dockerfile" },
@@ -119,7 +119,7 @@ def client_files(
 
   return [
     # ./conf
-    { src: "#{tem}/run.conf.sh", dst: "#{out}/run.conf.sh", cfg: cfg_client },
+    { src: "#{tem}/run_conf.sh", dst: "#{out}/run_conf.sh", cfg: cfg_client },
     {
       src: "#{tem}/conf/%{client_name}.conf",
       dst: "#{out}/conf/#{client_name}.conf",
@@ -136,7 +136,7 @@ def client_files(
       mod: 0600
     },
     # ./ovpn
-    { src: "#{tem}/run.ovpn.sh", dst: "#{out}/run.ovpn.sh", cfg: cfg_client },
+    { src: "#{tem}/run_ovpn.sh", dst: "#{out}/run_ovpn.sh", cfg: cfg_client },
     {
       src: "#{tem}/ovpn/%{client_name}.ovpn",
       dst: "#{out}/ovpn/#{client_name}.ovpn",
@@ -145,8 +145,8 @@ def client_files(
     },
     # ./container
     {
-      src: "#{tem}/run.container.sh",
-      dst: "#{out}/run.container.sh",
+      src: "#{tem}/run_container.sh",
+      dst: "#{out}/run_container.sh",
       cfg: cfg_client
     },
     { src: "#{tem}/container/Dockerfile", dst: "#{out}/container/Dockerfile" },

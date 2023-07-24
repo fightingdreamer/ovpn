@@ -2,5 +2,5 @@
 
 set -e
 
-cd ./config/conf
+cd ./conf
 exec openvpn --config ./%{client_name}.conf
