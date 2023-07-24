@@ -175,24 +175,6 @@ def client_files(
   ]
 end
 
-# def tls_extension(path)
-#   OpenSSL::X509::Certificate
-#     .new(File.read path)
-#     .extensions
-#     .map { |e| e.value }
-#     .filter { |e| e.start_with? "TLS" }
-#     .first
-# end
-
-# Dir
-#   .glob("pki/issued/*.crt")
-#   .map do |path|
-#     name = File.basename(path, File.extname(path))
-#     ext = tls_extension(path)
-#     generate_server(name, $config) if ext.include?("Server")
-#     generate_client(name, $config) if ext.include?("Client")
-#   end
-
 def flatten_hash(value, path = nil)
   {}.merge *value.map { |k, v| flatten(v, [path, k].compact.join("_").to_sym) }
 end
