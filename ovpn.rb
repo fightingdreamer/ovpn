@@ -1,11 +1,11 @@
 #!/usr/bin/env ruby
 
-require_relative "src/pki"
-require_relative "src/cert"
-require_relative "src/config"
+require_relative 'src/pki'
+require_relative 'src/cert'
+require_relative 'src/config'
 
-def main()
-  env = { pki: "pki", tpl: "tpl", out: "out", cfg: "config.json" }
+def main
+  env = { pki: 'pki', tpl: 'tpl', out: 'out', cfg: 'config.json' }
   commands = %w[
     pki_init
     pki_drop
@@ -19,12 +19,12 @@ def main()
 
   command_name = ARGV.first
   command_args = ARGV.drop(1)
-  command = commands.filter { |command| command == command_name }.first
+  selected_command = commands.filter { |command| command == command_name }.first
 
-  abort("`command` invalid, options: \n#{commands.join("\n")}") if command.nil?
-  send(command, env, *command_args)
+  abort("`command` invalid, options: \n#{commands.join("\n")}") if selected_command.nil?
+  send(selected_command, env, *command_args)
 
-  puts "done"
+  puts 'done'
 end
 
 main

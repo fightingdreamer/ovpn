@@ -1,8 +1,9 @@
-require "set"
-require "JSON"
-require_relative "./ops"
-require_relative "./cert"
-require_relative "./flatten"
+require 'set'
+require 'JSON'
+require_relative './pki'
+require_relative './ops'
+require_relative './cert'
+require_relative './flatten'
 
 def _drop_unused_files(new, old)
   (old - new)
@@ -16,9 +17,10 @@ end
 def _drop_unused_dirs(new, old)
   (old - new)
     .select { |path| File.directory?(path) }
-    .sort { |a, b| b.split("/").length <=> a.split("/").length }
+    .sort { |a, b| b.split('/').length <=> a.split('/').length }
     .each do |path|
-      next if Dir.children(path).length != 0
+      next unless Dir.children(path).empty?
+
       Dir.rmdir(path)
       p "deleted #{path}"
     end
@@ -27,35 +29,35 @@ end
 def config_init(env)
   cfg = env[:cfg]
   tpl = env[:tpl]
-  abort("config already exist") if File.exist?(cfg)
+  abort('config already exist') if File.exist?(cfg)
   content = File.read("#{tpl}/config/#{cfg}")
-  File.write("#{cfg}", content)
+  File.write(cfg, content)
 end
 
 def config_sync(env)
   cfg = env[:cfg]
   pki = env[:pki]
-  tpl = env[:tpl]
   out = env[:out]
-  abort("config not exist") unless File.exist?(cfg)
+  abort('config not exist') unless File.exist?(cfg)
+  pki_init(env) unless File.exist?(pki)
 
   config = JSON.load_file(cfg)
-  servers = [config["server"]]
-  clients = config["clients"]
+  servers = [config['server']]
+  clients = config['clients']
 
   v_cert_names = cert_names(env)
-  server_names = servers.map { |s| s["name"] }
-  client_names = clients.map { |c| c["name"] }
+  server_names = servers.map { |s| s['name'] }
+  client_names = clients.map { |c| c['name'] }
 
-  for cert_name in v_cert_names - (server_names + client_names)
+  (v_cert_names - (server_names + client_names)).each do |cert_name|
     cert_revoke(env, cert_name)
   end
 
-  for server_name in server_names - v_cert_names
+  (server_names - v_cert_names).each do |server_name|
     cert_create_server(env, server_name)
   end
 
-  for client_name in client_names - v_cert_names
+  (client_names - v_cert_names).each do |client_name|
     cert_create_client(env, client_name)
   end
 
@@ -72,7 +74,7 @@ def config_sync(env)
   dst_new = ops_new.map { |op| op[:dst] }
   dst_old = Dir.glob("#{out}/**/*")
 
-  for op in ops_new
+  ops_new.each do |op|
     src = op[:src]
     dst = op[:dst]
     var = op[:var]
@@ -93,10 +95,9 @@ def config_sync(env)
       p "updated #{dst}"
     end
 
-    unless mod.nil? or File.stat(dst).mode & 0777 == mod
+    unless mod.nil? || File.stat(dst).mode & 0o777 == mod
       FileUtils.chmod(mod, dst)
       p "updated #{dst}"
-      next
     end
   end
 

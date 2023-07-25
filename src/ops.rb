@@ -16,20 +16,18 @@ def ops_server(env, var_server, var_clients)
     # ./conf
     { src: "#{tpl}/run_conf.sh", dst: "#{out}/run_conf.sh", var: var_server },
     {
-      src: "#{tpl}/conf/%{server_name}.conf",
+      src: "#{tpl}/conf/%(server_name).conf",
       dst: "#{out}/conf/#{server_name}.conf",
       var: var_server
     },
     { src: "#{tpl}/conf/dhcp/pool.txt", dst: "#{out}/conf/dhcp/pool.txt" },
     *var_clients.map do |var_client|
       client_name = var_client[:client_name]
-      (
-        {
-          src: "#{tpl}/conf/ccd/%{client_name}",
-          dst: "#{out}/conf/ccd/#{client_name}",
-          var: {}.merge(var_server, var_client)
-        }
-      )
+      {
+        src: "#{tpl}/conf/ccd/%(client_name)",
+        dst: "#{out}/conf/ccd/#{client_name}",
+        var: {}.merge(var_server, var_client)
+      }
     end,
     { src: "#{pki}/dh.pem", dst: "#{out}/conf/pki/dh.pem" },
     { src: "#{pki}/ca.crt", dst: "#{out}/conf/pki/ca.crt" },
@@ -41,7 +39,7 @@ def ops_server(env, var_server, var_clients)
     {
       src: "#{pki}/private/#{server_name}.key",
       dst: "#{out}/conf/pki/private/#{server_name}.key",
-      mod: 0600
+      mod: 0o600
     },
     # container
     {
@@ -65,13 +63,11 @@ def ops_server(env, var_server, var_clients)
     },
     *var_clients.map do |var_client|
       client_name = var_client[:client_name]
-      (
-        {
-          src: "#{tpl}/container/root/opt/openvpn/ccd/%{client_name}",
-          dst: "#{out}/container/root/opt/openvpn/ccd/#{client_name}",
-          var: {}.merge(var_server, var_client)
-        }
-      )
+      {
+        src: "#{tpl}/container/root/opt/openvpn/ccd/%(client_name)",
+        dst: "#{out}/container/root/opt/openvpn/ccd/#{client_name}",
+        var: {}.merge(var_server, var_client)
+      }
     end,
     {
       src: "#{pki}/dh.pem",
@@ -92,7 +88,7 @@ def ops_server(env, var_server, var_clients)
     {
       src: "#{pki}/private/#{server_name}.key",
       dst: "#{out}/container/root/opt/openvpn/pki/private/#{server_name}.key",
-      mod: 0600
+      mod: 0o600
     }
   ]
 end
@@ -108,7 +104,7 @@ def ops_client(env, var_server, var_client)
     # ./conf
     { src: "#{tpl}/run_conf.sh", dst: "#{out}/run_conf.sh", var: var_client },
     {
-      src: "#{tpl}/conf/%{client_name}.conf",
+      src: "#{tpl}/conf/%(client_name).conf",
       dst: "#{out}/conf/#{client_name}.conf",
       var: {}.merge(var_server, var_client)
     },
@@ -120,15 +116,15 @@ def ops_client(env, var_server, var_client)
     {
       src: "#{pki}/private/#{client_name}.key",
       dst: "#{out}/conf/pki/private/#{client_name}.key",
-      mod: 0600
+      mod: 0o600
     },
     # ./ovpn
     { src: "#{tpl}/run_ovpn.sh", dst: "#{out}/run_ovpn.sh", var: var_client },
     {
-      src: "#{tpl}/ovpn/%{client_name}.ovpn",
+      src: "#{tpl}/ovpn/%(client_name).ovpn",
       dst: "#{out}/ovpn/#{client_name}.ovpn",
       var: {}.merge(var_server, var_client, var_client_pki),
-      mod: 0600
+      mod: 0o600
     },
     # ./container
     {
@@ -157,7 +153,7 @@ def ops_client(env, var_server, var_client)
     {
       src: "#{pki}/private/#{client_name}.key",
       dst: "#{out}/container/root/opt/openvpn/pki/private/#{client_name}.key",
-      mod: 0600
+      mod: 0o600
     }
   ]
 end
