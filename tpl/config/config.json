@@ -1,8 +1,8 @@
 {
   "server": {
-    "name": "myserver",
+    "name": "my-server-name",
     "public": {
-      "ip": "myvpn.ddns.net",
+      "ip": "my-domain-name.com",
       "port": "1194"
     },
     "local": {
@@ -22,10 +22,10 @@
   },
   "clients": [
     {
-      "name": "myclient",
+      "name": "my-client-name",
       "vpn": {
         "ip": "172.16.0.2"
       }
-    },
+    }
   ]
 }
