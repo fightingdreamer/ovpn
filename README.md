@@ -2,7 +2,7 @@
 
 Simple tool to manage your OpenVPN keys and certs in a deterministic way.
 
-## Desciption
+## Description
 
 This tools was created to follow `nix` way to doing things, create config once and ensure that generated state will follow.
 
