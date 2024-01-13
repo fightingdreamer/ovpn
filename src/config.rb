@@ -1,5 +1,5 @@
 require 'set'
-require 'JSON'
+require 'json'
 require_relative './pki'
 require_relative './ops'
 require_relative './cert'

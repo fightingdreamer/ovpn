@@ -1,4 +1,4 @@
-require 'FileUtils'
+require 'fileutils'
 require_relative './easyrsa'
 
 def cert_create_server(env, name)
