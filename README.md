@@ -107,3 +107,10 @@ sh run_container.sh
 cd ./out/servers/my-client-name
 sh run_ovpn.sh
 ```
+
+## Notes | Debian/Ubuntu
+
+They using custom `easy_rsa` path, usually `/usr/share/easy-rsa/easyrsa`. 
+
+Ensure that `/usr/share/easy-rsa/` in included in `$PATH` or symlink `easyrsa` manually to `/usr/bin/easyrsa`.
+
