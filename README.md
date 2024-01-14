@@ -4,7 +4,7 @@ Simple tool to manage your OpenVPN keys and certs in a deterministic way.
 
 ## Description
 
-This tools was created to follow `nix` way to doing things, create config once and ensure that generated state will follow.
+This tool was created to follow `nix` way to doing things, create config once and ensure that generated state will follow.
 
 Any changes to config will be reflected by matching changes in generated state:
 - `./pki` is updated
