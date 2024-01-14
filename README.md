@@ -45,6 +45,9 @@ Any changes to config will be reflected by matching changes in generated state:
           "end": "172.16.0.254"
         }
       }
+    },
+    "crypto": {
+      "cipher": "CHACHA20-POLY1305"
     }
   },
   "clients": [
